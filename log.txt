@@ -1,1 +1,4 @@
-function now() { [native code] }, GET
+
+ 1736523106323, GET , /about
+ 1736523201714, GET , /about 1736523213988, GET,/ 
+ 1736523232073, GET,/ 
