@@ -1,29 +1,9 @@
-const http = require("http");
-const fs = require("fs");
+const express = require("express");
 
-const server = http.createServer((req, res) => {
-  if (req.method == "GET") {
-    if (req.url == "/") {
-      fs.appendFile(
-        "log.txt",
-        ` ${Date.now()}, ${req.method},${req.url} \n`,
-        (data, err) => {
-          return;
-        }
-      );
-    }
-    if (req.url == "/about") {
-      fs.appendFile(
-        "log.txt",
-        ` ${Date.now()}, ${req.method} , ${req.url} \n`,
-        (data, err) => {
-          return;
-        }
-      );
-    }
-  }
+const app = express();
 
-  res.end("End");
+app.get("/", (req, res) => {
+  res.send("Hello GET");
 });
 
-server.listen(8000, () => console.log("server is connected"));
+app.listen(8000, () => console.log("server is connected"));
