@@ -56,4 +56,15 @@ app.patch("/api/:id", (req, res) => {
   }
 });
 
+app.delete("/api/:id", (req, res) => {
+  const id = req.params.id;
+  if (id) {
+    const newdata = data.filter((item, i) => item.id !== parseInt(id));
+
+    fs.writeFile("./data.json", JSON.stringify(newdata), (data, err) => {
+      return res.send({ status: 200 });
+    });
+  }
+});
+
 app.listen(8000, () => console.log("server is connected"));
