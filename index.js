@@ -7,6 +7,11 @@ const app = express();
 
 app.use(express.urlencoded({ extended: false }));
 
+app.use((req, res, next) => {
+  console.log("Hello middle ware");
+  next();
+});
+
 // REST ful API
 
 // GET all the users
