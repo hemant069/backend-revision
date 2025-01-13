@@ -1,74 +1,114 @@
 const express = require("express");
 const data = require("./data.json");
 const fs = require("fs");
-const { json } = require("stream/consumers");
+const { default: mongoose } = require("mongoose");
 
 const app = express();
 
 app.use(express.urlencoded({ extended: false }));
 
+// Middleware is Here
 app.use((req, res, next) => {
-  console.log("Hello middle ware");
+  console.log("Hello middle ware is here");
   next();
 });
+
+// Database Start From Here
+
+mongoose
+  .connect("mongodb://127.0.0.1:27017/users")
+  .then(() => console.log("Database is connected"))
+  .catch((err) => console.log(err));
+
+// Schema for the mongodb
+
+const usersSchema = new mongoose.Schema({
+  first_name: { type: String },
+  last_name: { type: String },
+  email: { type: String, required: true, unique: true },
+});
+
+const usersModel = new mongoose.model("user", usersSchema);
 
 // REST ful API
 
 // GET all the users
-app.get("/api", (req, res) => {
-  const response = data.map((item, i) => item.first_name);
-  res.send(response);
+app.get("/api", async (req, res) => {
+  try {
+    const response = await usersModel.find({});
+
+    return res.send(response);
+  } catch (error) {
+    return res.send(error);
+  }
 });
 
 // GET users by id
 
-app.get("/api/:id", (req, res) => {
+app.get("/api/:id", async (req, res) => {
   const id = req.params.id;
-  const response = data.find((item, i) => item.id === Number(id));
-  res.send(response);
+
+  try {
+    const user = await usersModel.findOne({ _id: id });
+    return res.send({ msg: "user find success", user });
+  } catch (error) {
+    return res.send({ msg: "something went wrong " });
+  }
 });
 
 // POST users
 
-app.post("/api", (req, res) => {
+app.post("/api", async (req, res) => {
   const body = req.body;
 
-  data.push({ ...body, id: data.length + 1 });
+  console.log(body);
 
-  fs.writeFile("./data.json", JSON.stringify(data), (data, err) => {
-    return res.send({ status: 200 });
-  });
+  try {
+    const user = usersModel(body);
+    user.save();
+    return res.send(user);
+  } catch (error) {
+    return res.send(error);
+  }
 });
 
 // PATCH users
 
-app.patch("/api/:id", (req, res) => {
+app.patch("/api/:id", async (req, res) => {
   const id = req.params.id;
-  const { first_name, last_name, email, gender } = req.body;
+  const { first_name, last_name, email } = req.body;
+  try {
+    const user = await usersModel.findOne({ _id: id });
 
-  const user = data.find((item, i) => item.id === parseInt(id));
-
-  if (parseInt(id) > 0 && parseInt(id) < data.length) {
-    (user.first_name = first_name),
-      (user.last_name = last_name),
-      (user.email = email),
-      (user.gender = gender);
-    fs.writeFile("./data.json", JSON.stringify(data), (data, err) => {
-      res.send({ status: 200 });
-    });
-  } else {
-    res.send({ status: 401 });
+    if (user) {
+      const updateduser = await usersModel.findByIdAndUpdate(
+        id,
+        {
+          $set: {
+            first_name,
+            last_name,
+            email,
+          },
+        },
+        { new: true }
+      );
+      updateduser.save();
+      return res
+        .status(201)
+        .send({ msg: "user updated successfully", updateduser });
+    }
+  } catch (error) {
+    return res.status(500).send({ msg: "something went wrong", error: error });
   }
 });
 
-app.delete("/api/:id", (req, res) => {
+app.delete("/api/:id", async (req, res) => {
   const id = req.params.id;
-  if (id) {
-    const newdata = data.filter((item, i) => item.id !== parseInt(id));
-
-    fs.writeFile("./data.json", JSON.stringify(newdata), (data, err) => {
-      return res.send({ status: 200 });
-    });
+  try {
+    const deleteuser = await usersModel.deleteOne({ _id: id });
+    return res.send({ msg: "delete user success", deleteuser });
+  } catch (error) {
+    return res.send({ msg: "something went wrong", error });
   }
 });
 
